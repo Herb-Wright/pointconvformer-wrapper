@@ -1,0 +1,3 @@
+[submodule "pointconvformer"]
+	path = pointconvformer
+	url = https://github.com/apple/ml-pointconvformer.git

@@ -1,0 +1,11 @@
+name: pointconvformer_wrapper
+channels:
+- pyg
+dependencies:
+- pyg::pyg
+
+
+
+
+
+
