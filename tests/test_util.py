@@ -51,3 +51,23 @@ def test_knn():
 	assert out.shape[1] == K
 
 
+
+def test_knn_hack():
+	K = 20
+	points = Tensor([
+		[0, 0, 0],
+		[0.5, 0.5, 0.5],
+		[2, 2, 2],
+		[0, 0, 0],
+		[0, 0.6, 0],
+		[0, 1.5, 0],
+		[0, 1.7, 0],
+	])
+	batch = Tensor([0, 0, 0, 1, 1, 1, 1])
+	sampled_points, sampled_batch = grid_subsample(points, batch, 1.0)
+	out = knn(sampled_points, points, K, sampled_batch, batch, hack=True)
+	
+	assert len(out.shape) == 2
+	assert out.shape[0] == points.shape[0]
+	assert out.shape[1] == K
+
