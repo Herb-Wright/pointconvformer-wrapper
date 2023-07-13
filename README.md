@@ -5,6 +5,10 @@
 
 This project provides an easy interface for using PointConvFormer in Pytorch. Right now only an Encoder with pooling is implemented. 
 
+Here is the PointConvPaper by Wu et al:
+
+https://arxiv.org/abs/2208.02879
+
 
 ## Getting Started
 
@@ -45,9 +49,9 @@ model = PointConvFormerEncoder(
 	pool='max'
 )
 
-points = torch.randn((5, 3))
-features = torch.randn((5, 3))
-batch = torch.zeros((5,))
+points = torch.randn((1000, 3))
+features = torch.randn((1000, 3))
+batch = torch.zeros((1000,))
 
 out = model(points, features, batch)  # should be (1, 256)
 ```
@@ -79,5 +83,7 @@ All of the tests should be passing.
 ## Known Issues
 
 - knn method needs to have batches with > K points or it will fail to reshape
+  - this might be what we want. Perhaps sampling should be updated
 - running the setup.sh creates a `./data` folder that shouldn't exist
+
 
