@@ -3,7 +3,7 @@
 
 *Herbert Wright*
 
-This project provides an easy interface for using PointConvFormer in Pytorch
+This project provides an easy interface for using PointConvFormer in Pytorch. Right now only an Encoder with pooling is implemented. 
 
 
 ## Getting Started
@@ -15,7 +15,17 @@ Make sure you have all the requirements
 
 Clone this repo
 
+```bash
+git clone https://github.com/Herb-Wright/pointconvformer-wrapper.git --recurse-submodules
+cd pointconvformer-wrapper
+```
+
 Create the conda environment
+
+```bash
+conda env create -f environment.yml
+conda activate pointconvformer_wrapper
+```
 
 Install the project. This should also compile the cpp wrappers for pointconv
 
@@ -32,6 +42,7 @@ from pointconvformer_wrapper import PointConvFormerEncoder
 model = PointConvFormerEncoder(
 	in_dim=3,
 	out_dim=256,
+	pool='max'
 )
 
 points = torch.randn((5, 3))
@@ -63,4 +74,10 @@ or
 pytest ./tests/test_util.py
 ```
 
+All of the tests should be passing.
+
+## Known Issues
+
+- knn method needs to have batches with > K points or it will fail to reshape
+- running the setup.sh creates a `./data` folder that shouldn't exist
 
