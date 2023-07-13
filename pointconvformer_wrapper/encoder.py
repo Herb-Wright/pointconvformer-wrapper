@@ -68,7 +68,7 @@ class PointConvFormerEncoder(Module):
 		# (1) subsample + knn
 		points_list = [points]
 		batch_list = [batch]
-		edges_self = [knn(points, points, self.k_self[0], batch, batch)]
+		edges_self = [knn(points, points, self.k_self[0], batch, batch, hack=True)]
 		edges_forward = []
 		norms_list = []
 		if norms is None:
@@ -76,8 +76,8 @@ class PointConvFormerEncoder(Module):
 			sampled_points, sampled_batch = points, batch
 			for i, gs in enumerate(self.grid_size):
 				sampled_points, sampled_batch = grid_subsample(sampled_points, sampled_batch, gs)
-				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch))
-				edges_forward.append(knn(points_list[-1], sampled_points, self.k_forward[i], batch_list[-1], sampled_batch))
+				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch, hack=True))
+				edges_forward.append(knn(points_list[-1], sampled_points, self.k_forward[i], batch_list[-1], sampled_batch, hack=True))
 				points_list.append(sampled_points)
 				batch_list.append(sampled_batch)
 				norms_list.append(torch.zeros_like(sampled_points))
