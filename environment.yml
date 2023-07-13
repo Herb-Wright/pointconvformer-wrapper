@@ -2,15 +2,17 @@ name: pointconvformer_wrapper
 channels:
 - pyg
 - pytorch
+- nvidia
+- conda-forge
 dependencies:
 - python
+- nvidia::cudatoolkit
 - pytorch::pytorch=*=*cuda*
+- pytorch::torchvision
 - pyg::pyg
 - pyg::pytorch-cluster
-- anaconda::pip
-- pip:
-  - easydict
-  - timm
+# - pip:
+#   - torch_cluster
 
 
 

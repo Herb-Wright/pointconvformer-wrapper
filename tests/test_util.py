@@ -1,6 +1,7 @@
-from pointconvformer_wrapper.util import grid_subsample
+from pointconvformer_wrapper.util import grid_subsample, knn
 from torch import Tensor
 import torch
+
 
 
 def test_grid_subsample():
@@ -29,9 +30,9 @@ def test_grid_subsample():
 	assert torch.allclose(sampled_points, points)
 	assert torch.allclose(sampled_batch, batch)
 
-from torch_cluster.knn import knn
 
 def test_knn():
+	K = 2
 	points = Tensor([
 		[0, 0, 0],
 		[0.5, 0.5, 0.5],
@@ -43,7 +44,10 @@ def test_knn():
 	])
 	batch = Tensor([0, 0, 0, 1, 1, 1, 1])
 	sampled_points, sampled_batch = grid_subsample(points, batch, 1.0)
-	out = knn(sampled_points, points, 2, sampled_batch, batch)
-	print(out[1].reshape(-1, 2))
-	raise Exception()
+	out = knn(sampled_points, points, K, sampled_batch, batch)
+	
+	assert len(out.shape) == 2
+	assert out.shape[0] == points.shape[0]
+	assert out.shape[1] == K
+
 

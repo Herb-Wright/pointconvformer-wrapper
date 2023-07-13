@@ -38,6 +38,8 @@ def grid_subsample_with_feats(
 	sampled_feats = pool_pos(cluster_idxs, feats)
 	return sampled_points, sampled_batch, sampled_feats
 
-def knn(y: Tensor, x: Tensor, k: int, y_batch: Tensor, x_batch: Tensor) -> Tensor:
+def knn(x: Tensor, y: Tensor, k: int, x_batch: Tensor, y_batch: Tensor) -> Tensor:
 	'''performs knn returns Tensor of indices (P', K) where y is (P', 3) and x is (P, 3)'''
-	return pyg_knn(y, x, k, y_batch, x_batch)[1].reshape(-1, k)
+	P2 = y.shape[0]
+	pairs = pyg_knn(x, y, k, x_batch, y_batch)
+	return pairs[1].reshape(P2, k)
