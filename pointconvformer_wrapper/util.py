@@ -71,7 +71,7 @@ def knn(
 				count = torch.sum(x_batch == b)
 				diff = 2 + k - count
 				pointcloud_size_multiple = (1 + diff // count) * count
-				idxs_j = torch.randperm(pointcloud_size_multiple, dtype=int) % count
+				idxs_j = torch.randperm(pointcloud_size_multiple, dtype=int, device=device) % count
 				x = torch.concatenate([x, x[x_batch == b][idxs_j[:diff]]])
 				x_batch = torch.concatenate([x_batch, torch.ones((diff,), device=device) * b])
 	pairs = pyg_knn(x, y, k, x_batch, y_batch)
