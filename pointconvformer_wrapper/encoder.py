@@ -78,7 +78,7 @@ class PointConvFormerEncoder(Module):
 			sampled_points, sampled_batch = points, batch
 			for i, gs in enumerate(self.grid_size):
 				if self.use_hybrid_sample:
-					sampled_points, sampled_batch = hybrid_grid_subsample(sampled_points, sampled_batch, gs, self.k[i+1])
+					sampled_points, sampled_batch = hybrid_grid_subsample(sampled_points, sampled_batch, gs, self.k_self[i+1])
 				else:
 					sampled_points, sampled_batch = grid_subsample(sampled_points, sampled_batch, gs)
 				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch))
@@ -100,7 +100,7 @@ class PointConvFormerEncoder(Module):
 		)
 
 		final_feats = feats_list[-1][0]  # (P', H)
-		final_batch = batch_list[-1]  # (P',)
+		final_batch = batch_list[-1].to(torch.int64)  # (P',)
 
 		# (3) pool
 		if self.pool == 'mean':
