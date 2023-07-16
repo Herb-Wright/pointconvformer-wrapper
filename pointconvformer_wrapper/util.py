@@ -61,7 +61,15 @@ def hybrid_grid_subsample(
 		sampled_batch = torch.concatenate([sampled_batch, torch.ones((num_random,), device=device) * b], dim=0)
 	return sampled_points, sampled_batch
 
-def knn(x: Tensor, y: Tensor, k: int, x_batch: Tensor, y_batch: Tensor) -> Tensor:
+def knn(
+	x: Tensor, 
+	y: Tensor, 
+	k: int, 
+	x_batch: Tensor, 
+	y_batch: Tensor,
+	*,
+	hack: bool = False,
+) -> Tensor:
 	'''
 	performs knn returns Tensor of indices (P', K) where y is (P', 3) and x is (P, 3)
 	
@@ -71,6 +79,8 @@ def knn(x: Tensor, y: Tensor, k: int, x_batch: Tensor, y_batch: Tensor) -> Tenso
 	- k (int): the number of neighbors K
 	- x_batch (P,)
 	- y_batch (P',)
+	- (optional) hack (bool): Defaults to False, if True, enforces k indices are returned using
+		uniform random sampling
 	
 	returns:
 	- idxs (P', K): the indices of the k nearest neighbors per each point in y
@@ -79,5 +89,20 @@ def knn(x: Tensor, y: Tensor, k: int, x_batch: Tensor, y_batch: Tensor) -> Tenso
 	pairs = pyg_knn(x, y, k, x_batch, y_batch)
 	idxs, mask = to_dense_batch(pairs[1], pairs[0])
 	if torch.sum(~mask) > 0 or idxs.shape[0] != P2:
-		raise Exception('too few neighbors found')
+		if hack:
+			device = x.device
+			if idxs.shape[1] < k:
+				idxs_new = torch.zeros((P2, k), dtype=idxs.dtype, device=device)
+				idxs_new[:, :idxs.shape[1]] = idxs
+				idxs = idxs_new
+				mask_new = torch.zeros((P2, k), dtype=mask.dtype, device=device)
+				mask_new[:, :mask.shape[1]] = mask
+				mask = mask_new
+			num_per_batch = torch.sum(mask, dim=1)  # (P',)
+			for i in range(torch.amin(num_per_batch), k):
+				rand_idxs = torch.floor(torch.rand_like(num_per_batch, dtype=torch.float) * num_per_batch).to(idxs.dtype)
+				empty_mask = ~mask[:, i]
+				idxs[empty_mask, i] = rand_idxs[empty_mask]
+		else:
+			raise Exception('too few neighbors found')
 	return idxs

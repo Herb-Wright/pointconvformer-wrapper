@@ -1,7 +1,7 @@
 from torch.nn import Module, Linear
 from torch import Tensor
 import torch
-from .util import grid_subsample, knn, hybrid_grid_subsample
+from .util import grid_subsample, knn, hybrid_grid_subsample, grid_subsample_with_feats
 from .pcf_api import PCF_Backbone, get_default_configs
 from easydict import EasyDict
 from typing import List
@@ -47,7 +47,7 @@ class PointConvFormerEncoder(Module):
 		num_heads: int = 8,
 		mid_dim: List[int] = [16,16,16,16,16],
 		resblocks: List[int] = [ 0, 2, 4, 6, 6, 2],
-		use_hybrid_sample: bool = False,
+		hack: bool = False,
 	) -> None:
 		super().__init__()
 		num_levels = len(feat_dims)
@@ -64,30 +64,38 @@ class PointConvFormerEncoder(Module):
 		self.k_forward = k_forward
 		self.k_self = k_self
 		self.lin = Linear(feat_dims[-1], out_dim)
-		self.use_hybrid_sample = use_hybrid_sample
+		self.hack = hack
 
 	def forward(self, points: Tensor, features: Tensor, batch: Tensor, norms: Tensor | None = None) -> Tensor:
 		# (1) subsample + knn
 		points_list = [points]
 		batch_list = [batch]
-		edges_self = [knn(points, points, self.k_self[0], batch, batch)]
+		edges_self = [knn(points, points, self.k_self[0], batch, batch, hack=self.hack)]
 		edges_forward = []
 		norms_list = []
 		if norms is None:
 			norms_list.append(torch.zeros_like(points))
 			sampled_points, sampled_batch = points, batch
 			for i, gs in enumerate(self.grid_size):
-				if self.use_hybrid_sample:
+				if self.hack:
 					sampled_points, sampled_batch = hybrid_grid_subsample(sampled_points, sampled_batch, gs, self.k_self[i+1])
 				else:
 					sampled_points, sampled_batch = grid_subsample(sampled_points, sampled_batch, gs)
-				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch))
-				edges_forward.append(knn(points_list[-1], sampled_points, self.k_forward[i], batch_list[-1], sampled_batch))
+				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch, hack=self.hack))
+				edges_forward.append(knn(points_list[-1], sampled_points, self.k_forward[i], batch_list[-1], sampled_batch, hack=self.hack))
 				points_list.append(sampled_points)
 				batch_list.append(sampled_batch)
 				norms_list.append(torch.zeros_like(sampled_points))
 		else:
-			raise Exception('Damn you and your norms')
+			norms_list.append(torch.zeros_like(points))
+			sampled_points, sampled_batch, sampled_norms = points, batch, norms
+			for i, gs in enumerate(self.grid_size):
+				sampled_points, sampled_batch, sampled_norms = grid_subsample_with_feats(sampled_points, sampled_batch, sampled_norms, gs)
+				edges_self.append(knn(sampled_points, sampled_points, self.k_self[i+1], sampled_batch, sampled_batch, hack=self.hack))
+				edges_forward.append(knn(points_list[-1], sampled_points, self.k_forward[i], batch_list[-1], sampled_batch, hack=self.hack))
+				points_list.append(sampled_points)
+				batch_list.append(sampled_batch)
+				norms_list.append(sampled_norms)
 
 		# (2) forward pass
 		feats_list = self.backbone(
@@ -107,6 +115,8 @@ class PointConvFormerEncoder(Module):
 			out = global_mean_pool(final_feats, final_batch)
 		elif self.pool == 'max':
 			out = global_max_pool(final_feats, final_batch)
+		elif self.pool == 'both':
+			out = global_mean_pool(final_feats, final_batch) + global_max_pool(final_feats, final_batch)
 
 		out = self.lin(out)
 		

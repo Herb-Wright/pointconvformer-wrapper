@@ -84,6 +84,7 @@ All of the tests should be passing.
 
 - knn method needs to have batches with > K points or it will fail to reshape
   - this might be what we want. Perhaps sampling should be updated
+	- (possible solution) I added a "hack" into the knn that will enforce that k indices are returned by randomly sampling
 - running the setup.sh creates a `./data` folder that shouldn't exist
 
 
